@@ -3,6 +3,9 @@ package com.bank.observability.logsgateway.audit.infrastructure;
 import com.bank.observability.logsgateway.config.AwsS3Properties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,10 +21,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +48,13 @@ class S3AuditArchiverTest {
         properties.getS3().setMultipartThresholdBytes(5_242_880L);
         properties.getS3().setPartSizeBytes(5_242_880L);
         properties.getS3().setFlushMaxBytes(1L);
-        archiver = new S3AuditArchiver(s3Client, properties, new ObjectMapper().findAndRegisterModules());
+        Retry retry = Retry.of("s3", RetryConfig.custom()
+                .maxAttempts(3)
+                .waitDuration(Duration.ZERO)
+                .build());
+        archiver = new S3AuditArchiver(
+                s3Client, properties, new ObjectMapper().findAndRegisterModules(),
+                retry, CircuitBreaker.ofDefaults("s3"));
     }
 
     @Test
@@ -78,5 +89,17 @@ class S3AuditArchiverTest {
         verify(s3Client).createMultipartUpload(any(CreateMultipartUploadRequest.class));
         verify(s3Client).uploadPart(any(UploadPartRequest.class), any(RequestBody.class));
         verify(s3Client).completeMultipartUpload(any(CompleteMultipartUploadRequest.class));
+    }
+
+    @Test
+    void retriesPutObjectFailures() {
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenThrow(new RuntimeException("s3 unavailable"))
+                .thenReturn(null);
+
+        archiver.archive(List.of(
+                new LogEnvelope(null, "teller-api", "trace-s3", null, "AUDIT", "teller override", null)));
+
+        verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }

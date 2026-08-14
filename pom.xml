@@ -24,6 +24,7 @@
         <opensearch.rest.version>2.17.1</opensearch.rest.version>
         <bucket4j.version>8.14.0</bucket4j.version>
         <logstash-logback.version>8.0</logstash-logback.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
     <dependencies>
@@ -80,6 +81,20 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-micrometer</artifactId>
+            <version>${resilience4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
