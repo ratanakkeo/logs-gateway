@@ -2,15 +2,18 @@ package com.bank.observability.logcontroller.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @Configuration
+@EnableAsync
 public class AsyncConfig {
 
     @Bean(name = "virtualThreadExecutor")
-    public Executor virtualThreadExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+    public AsyncTaskExecutor virtualThreadExecutor() {
+        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("log-ingest-");
+        executor.setVirtualThreads(true);
+        return executor;
     }
 }

@@ -54,6 +54,7 @@ public class S3AuditArchiver {
         }
         byte[] compressed = gzip(toNdjson(batch));
         String key = objectKey(batch);
+        log.info("s3_archive_batch size={} key={}", batch.size(), key);
         if (compressed.length >= awsS3Properties.getS3().getMultipartThresholdBytes()) {
             multipartUpload(key, compressed);
         } else {

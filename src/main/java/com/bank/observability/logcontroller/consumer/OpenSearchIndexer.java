@@ -15,6 +15,7 @@ public class OpenSearchIndexer {
 
     @KafkaListener(topics = "${app.kafka.topics.app}", groupId = "log-controller-opensearch")
     public void index(LogPayload payload) {
+        log.info("opensearch_index serviceName={} traceId={}", payload.getServiceName(), payload.getTraceId());
         openSearchHttpClient.index(payload);
     }
 }

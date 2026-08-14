@@ -1,30 +1,24 @@
 package com.bank.observability.logcontroller.controller;
 
 import com.bank.observability.logcontroller.model.LogPayload;
-import com.bank.observability.logcontroller.service.LogRoutingService;
-import com.bank.observability.logcontroller.service.PiiMaskingService;
+import com.bank.observability.logcontroller.service.LogIngestionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(IngestionController.class)
-@Import(IngestionControllerTest.SameThreadExecutorConfig.class)
 class IngestionControllerTest {
 
     @Autowired
@@ -34,10 +28,7 @@ class IngestionControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private PiiMaskingService piiMaskingService;
-
-    @MockitoBean
-    private LogRoutingService logRoutingService;
+    private LogIngestionService logIngestionService;
 
     @Test
     void missingRequiredFieldsReturn400() throws Exception {
@@ -48,7 +39,8 @@ class IngestionControllerTest {
         mockMvc.perform(post("/v1/logs/ingest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid log payload"));
     }
 
     @Test
@@ -60,22 +52,12 @@ class IngestionControllerTest {
                 .message("ok")
                 .data(Map.of("k", "v"))
                 .build();
-        when(piiMaskingService.scrub(any(LogPayload.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         mockMvc.perform(post("/v1/logs/ingest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isAccepted());
 
-        verify(piiMaskingService).scrub(any(LogPayload.class));
-        verify(logRoutingService).route(any(LogPayload.class));
-    }
-
-    @TestConfiguration
-    static class SameThreadExecutorConfig {
-        @Bean(name = "virtualThreadExecutor")
-        Executor virtualThreadExecutor() {
-            return Runnable::run;
-        }
+        verify(logIngestionService).ingestAsync(any(LogPayload.class));
     }
 }

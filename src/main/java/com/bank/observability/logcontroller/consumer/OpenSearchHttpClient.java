@@ -3,8 +3,8 @@ package com.bank.observability.logcontroller.consumer;
 import com.bank.observability.logcontroller.config.OpenSearchProperties;
 import com.bank.observability.logcontroller.model.LogPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -16,6 +16,8 @@ import java.time.Duration;
 
 @Component
 public class OpenSearchHttpClient {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenSearchHttpClient.class);
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -42,6 +44,7 @@ public class OpenSearchHttpClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
             if (status < 200 || status >= 300) {
+                log.error("opensearch_index_failed status={} body={}", status, response.body());
                 throw new IllegalStateException(
                         "OpenSearch indexing failed with HTTP " + status + ": " + response.body());
             }
@@ -51,18 +54,8 @@ public class OpenSearchHttpClient {
         } catch (IllegalStateException ex) {
             throw ex;
         } catch (Exception ex) {
+            log.error("opensearch_index_failed", ex);
             throw new IllegalStateException("OpenSearch indexing failed", ex);
-        }
-    }
-
-    @Configuration
-    static class HttpClientConfig {
-        @Bean
-        HttpClient openSearchJavaHttpClient() {
-            return HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .build();
         }
     }
 }
