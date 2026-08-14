@@ -1,0 +1,40 @@
+---
+description: logs-gateway architecture, ingest contract, and non-negotiable conventions
+alwaysApply: true
+---
+
+# logs-gateway
+
+Spring Boot 3.4 / Java 21 service: ingest logs over HTTP, mask PAN, route to Kafka, index app logs in OpenSearch, archive audit logs to S3.
+
+## Current state (do not regress)
+
+- Base package: `com.bank.observability.logsgateway`. Main class: `LogsGatewayApplication`.
+- Package-by-layer until Phase 2: `config/`, `consumer/`, `controller/`, `model/`, `service/`.
+- Every class has a mirroring unit test. Keep tests green after every move.
+
+## Ingest contract (never break)
+
+- `POST /v1/logs/ingest` requires `traceId`, `serviceName`, `logType`.
+- Missing fields → `400`. Valid payload → `202 Accepted`. Fire-and-forget.
+- `AUDIT` → Kafka `bank.logs.audit` → S3. All other types → `bank.logs.app` → OpenSearch.
+- Kafka partition key = `traceId`.
+
+## Conventions
+
+- Java 21 records for DTOs and the internal envelope; no Lombok going forward.
+- Package-by-feature: `ingest/`, `masking/`, `routing/`, `audit/`, `appindex/`, `config/`, `shared/`.
+- Feature packages use `api/`, `domain/`, `infrastructure/` as needed. `domain/` never imports `api/` or `infrastructure/`.
+- Kafka producer: `acks=all`, `enable.idempotence=true`. Consumers: manual ack after downstream success; poison → `*.DLT`.
+- PAN masking: Luhn-aware, at most first-6 + last-4. CVV must never be logged.
+- Tests mirror `src/main`. Run `mvn verify` after each step.
+
+```java
+// Edge DTO (Phase 3+): Jakarta validation on the HTTP record
+public record IngestLogRequest(
+    @NotBlank String traceId,
+    @NotBlank String serviceName,
+    @NotBlank String logType,
+    String message,
+    Map<String, Object> data) {}
+```

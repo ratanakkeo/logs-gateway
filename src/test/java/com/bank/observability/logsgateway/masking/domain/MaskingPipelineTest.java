@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PiiMaskingServiceTest {
+class MaskingPipelineTest {
 
     private final PanMasker panMasker = new PanMasker();
 

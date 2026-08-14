@@ -18,7 +18,7 @@ public class AuditArchiveService {
 
     @KafkaListener(
             topics = "${app.kafka.topics.audit}",
-            groupId = "log-controller-s3-audit",
+            groupId = "logs-gateway-s3-audit",
             batch = "true"
     )
     public void archive(List<LogEnvelope> batch, Acknowledgment acknowledgment) {

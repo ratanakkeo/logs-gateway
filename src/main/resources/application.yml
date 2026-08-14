@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: log-controller
+    name: logs-gateway
   threads:
     virtual:
       enabled: true
@@ -21,7 +21,7 @@ spring:
         max.in.flight.requests.per.connection: 5
         spring.json.add.type.headers: false
     consumer:
-      group-id: log-controller
+      group-id: logs-gateway
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

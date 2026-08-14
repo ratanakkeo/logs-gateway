@@ -18,7 +18,7 @@ public class AppLogIndexer {
         this.logIndexWriter = logIndexWriter;
     }
 
-    @KafkaListener(topics = "${app.kafka.topics.app}", groupId = "log-controller-opensearch")
+    @KafkaListener(topics = "${app.kafka.topics.app}", groupId = "logs-gateway-opensearch")
     public void index(LogEnvelope payload, Acknowledgment acknowledgment) {
         log.info("opensearch_index serviceName={} traceId={}", payload.serviceName(), payload.traceId());
         logIndexWriter.index(payload);

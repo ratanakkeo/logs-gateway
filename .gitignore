@@ -1,7 +1,9 @@
 target/
 *.class
 .idea/
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 *.iml
 .classpath
 .project

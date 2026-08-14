@@ -1,4 +1,4 @@
-# Logs Controller
+# Logs Gateway
 
 Spring Boot 3.4 / Java 21 service that ingests logs over HTTP, masks PAN, routes to Kafka, then indexes application logs in OpenSearch and archives audit logs to S3.
 
@@ -22,6 +22,7 @@ Configure AWS credentials with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` b
 ```bash
 curl -sS -X POST http://localhost:8080/v1/logs/ingest \
   -H 'Content-Type: application/json' \
+  -H 'X-API-Key: dev-key' \
   -d '{
     "timestamp": "2026-08-10T07:00:00Z",
     "serviceName": "payments-api",

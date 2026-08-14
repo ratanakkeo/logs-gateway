@@ -16,16 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class OpenSearchHttpClient implements LogIndexWriter {
+public class OpenSearchBulkIndexer implements LogIndexWriter {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenSearchHttpClient.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenSearchBulkIndexer.class);
     private static final int MAX_ATTEMPTS = 4;
 
     private final OpenSearchClient openSearchClient;
     private final OpenSearchProperties properties;
     private final List<LogEnvelope> buffer = new ArrayList<>();
 
-    public OpenSearchHttpClient(OpenSearchClient openSearchClient, OpenSearchProperties properties) {
+    public OpenSearchBulkIndexer(OpenSearchClient openSearchClient, OpenSearchProperties properties) {
         this.openSearchClient = openSearchClient;
         this.properties = properties;
     }

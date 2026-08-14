@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class LogPayloadTest {
+class IngestLogRequestTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 

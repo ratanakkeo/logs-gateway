@@ -4,8 +4,8 @@ import com.bank.observability.logsgateway.audit.domain.AuditArchiveWriter;
 import com.bank.observability.logsgateway.config.AwsS3Properties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -31,11 +31,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class S3AuditArchiver implements AuditArchiveWriter {
 
+    private static final Logger log = LoggerFactory.getLogger(S3AuditArchiver.class);
     private static final DateTimeFormatter PARTITION_DATE =
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
@@ -43,6 +42,12 @@ public class S3AuditArchiver implements AuditArchiveWriter {
     private final AwsS3Properties awsS3Properties;
     private final ObjectMapper objectMapper;
     private final List<LogEnvelope> buffer = new ArrayList<>();
+
+    public S3AuditArchiver(S3Client s3Client, AwsS3Properties awsS3Properties, ObjectMapper objectMapper) {
+        this.s3Client = s3Client;
+        this.awsS3Properties = awsS3Properties;
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public synchronized void archive(List<LogEnvelope> batch) {
