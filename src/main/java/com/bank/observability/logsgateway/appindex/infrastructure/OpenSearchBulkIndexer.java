@@ -4,6 +4,7 @@ import com.bank.observability.logsgateway.appindex.domain.LogIndexWriter;
 import com.bank.observability.logsgateway.config.DownstreamGuard;
 import com.bank.observability.logsgateway.config.OpenSearchProperties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
+import com.bank.observability.logsgateway.shared.metrics.LogsGatewayMetrics;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.Retry;
@@ -28,26 +29,30 @@ public class OpenSearchBulkIndexer implements LogIndexWriter {
     private final OpenSearchProperties properties;
     private final Retry retry;
     private final CircuitBreaker circuitBreaker;
+    private final LogsGatewayMetrics metrics;
     private final List<LogEnvelope> buffer = new ArrayList<>();
 
     public OpenSearchBulkIndexer(
             OpenSearchClient openSearchClient,
             OpenSearchProperties properties,
             RetryRegistry retryRegistry,
-            CircuitBreakerRegistry circuitBreakerRegistry) {
+            CircuitBreakerRegistry circuitBreakerRegistry,
+            LogsGatewayMetrics metrics) {
         this(openSearchClient, properties, retryRegistry.retry("opensearch"),
-                circuitBreakerRegistry.circuitBreaker("opensearch"));
+                circuitBreakerRegistry.circuitBreaker("opensearch"), metrics);
     }
 
     OpenSearchBulkIndexer(
             OpenSearchClient openSearchClient,
             OpenSearchProperties properties,
             Retry retry,
-            CircuitBreaker circuitBreaker) {
+            CircuitBreaker circuitBreaker,
+            LogsGatewayMetrics metrics) {
         this.openSearchClient = openSearchClient;
         this.properties = properties;
         this.retry = retry;
         this.circuitBreaker = circuitBreaker;
+        this.metrics = metrics;
     }
 
     @Override
@@ -73,18 +78,23 @@ public class OpenSearchBulkIndexer implements LogIndexWriter {
     }
 
     private void bulkIndex(List<LogEnvelope> batch) {
-        DownstreamGuard.run(retry, circuitBreaker, () -> {
-            BulkRequest.Builder builder = new BulkRequest.Builder();
-            for (LogEnvelope envelope : batch) {
-                builder.operations(op -> op.index(idx -> idx
-                        .index(properties.getIndex())
-                        .document(envelope)));
-            }
-            BulkResponse response = openSearchClient.bulk(builder.build());
-            if (response.errors()) {
-                throw new IllegalStateException("OpenSearch bulk contained item errors");
-            }
-            log.debug("opensearch_bulk_ok size={}", batch.size());
-        });
+        var sample = metrics.startOpenSearchBulk();
+        try {
+            DownstreamGuard.run(retry, circuitBreaker, () -> {
+                BulkRequest.Builder builder = new BulkRequest.Builder();
+                for (LogEnvelope envelope : batch) {
+                    builder.operations(op -> op.index(idx -> idx
+                            .index(properties.getIndex())
+                            .document(envelope)));
+                }
+                BulkResponse response = openSearchClient.bulk(builder.build());
+                if (response.errors()) {
+                    throw new IllegalStateException("OpenSearch bulk contained item errors");
+                }
+                log.debug("opensearch_bulk_ok size={}", batch.size());
+            });
+        } finally {
+            metrics.stopOpenSearchBulk(sample);
+        }
     }
 }

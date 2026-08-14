@@ -28,6 +28,11 @@ public class ConfigFieldMasker implements Masker {
     }
 
     @Override
+    public String type() {
+        return "field";
+    }
+
+    @Override
     public LogEnvelope mask(LogEnvelope envelope) {
         if (envelope == null) {
             return null;

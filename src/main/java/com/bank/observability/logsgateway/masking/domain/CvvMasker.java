@@ -18,6 +18,11 @@ public class CvvMasker implements Masker {
     private static final Set<String> CVV_KEYS = Set.of("cvv", "cvc", "csc", "cid", "securitycode", "cardcvv");
 
     @Override
+    public String type() {
+        return "cvv";
+    }
+
+    @Override
     public LogEnvelope mask(LogEnvelope envelope) {
         if (envelope == null) {
             return null;

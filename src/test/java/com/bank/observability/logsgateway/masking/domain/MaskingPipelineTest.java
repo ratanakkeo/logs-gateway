@@ -4,6 +4,7 @@ import com.bank.observability.logsgateway.config.MaskingProperties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -76,8 +77,9 @@ class MaskingPipelineTest {
     void chainRunsPanThenCvvThenConfig() {
         MaskingProperties properties = new MaskingProperties();
         properties.setFields(List.of("pin"));
+        List<String> hits = new ArrayList<>();
         MaskingPipeline pipeline = new MaskingPipeline(List.of(
-                new PanMasker(), new CvvMasker(), new ConfigFieldMasker(properties)));
+                new PanMasker(), new CvvMasker(), new ConfigFieldMasker(properties)), hits::add);
         LogEnvelope envelope = new LogEnvelope(null, null, null, null, "APPLICATION",
                 "card 4111111111111111", Map.of("cvv", "123", "pin", "9999"));
 
@@ -86,5 +88,6 @@ class MaskingPipelineTest {
         assertThat(scrubbed.message()).isEqualTo("card 411111******1111");
         assertThat(scrubbed.data()).doesNotContainKey("cvv");
         assertThat(scrubbed.data()).containsEntry("pin", "[MASKED]");
+        assertThat(hits).containsExactly("pan", "cvv", "field");
     }
 }

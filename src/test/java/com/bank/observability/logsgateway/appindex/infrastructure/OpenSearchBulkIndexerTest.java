@@ -2,9 +2,11 @@ package com.bank.observability.logsgateway.appindex.infrastructure;
 
 import com.bank.observability.logsgateway.config.OpenSearchProperties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
+import com.bank.observability.logsgateway.shared.metrics.LogsGatewayMetrics;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +45,8 @@ class OpenSearchBulkIndexerTest {
                 .retryExceptions(IOException.class)
                 .build());
         indexer = new OpenSearchBulkIndexer(
-                openSearchClient, properties, retry, CircuitBreaker.ofDefaults("opensearch"));
+                openSearchClient, properties, retry, CircuitBreaker.ofDefaults("opensearch"),
+                new LogsGatewayMetrics(new SimpleMeterRegistry()));
     }
 
     @Test

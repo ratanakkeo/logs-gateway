@@ -18,6 +18,11 @@ public class PanMasker implements Masker {
     private static final Pattern PAN_CANDIDATE = Pattern.compile("\\b(?:\\d[ -]*?){13,19}\\b");
 
     @Override
+    public String type() {
+        return "pan";
+    }
+
+    @Override
     public LogEnvelope mask(LogEnvelope envelope) {
         if (envelope == null) {
             return null;

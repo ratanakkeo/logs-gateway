@@ -27,6 +27,9 @@ class LogIngestionServiceTest {
     @Mock
     private LogPublisher logPublisher;
 
+    @Mock
+    private IngestMetrics ingestMetrics;
+
     @InjectMocks
     private LogIngestionService logIngestionService;
 
@@ -41,6 +44,7 @@ class LogIngestionServiceTest {
         ArgumentCaptor<LogEnvelope> captor = ArgumentCaptor.forClass(LogEnvelope.class);
         verify(maskingPipeline).scrub(captor.capture());
         verify(logPublisher).publish(eq("bank.logs.app"), eq("trace-1"), any(LogEnvelope.class));
+        verify(ingestMetrics).recordIngest("APPLICATION");
         assertThat(captor.getValue().timestamp()).isNotNull();
     }
 }

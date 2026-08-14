@@ -18,13 +18,16 @@ public class LogIngestionService {
     private final MaskingPipeline maskingPipeline;
     private final TopicRouter topicRouter;
     private final LogPublisher logPublisher;
+    private final IngestMetrics ingestMetrics;
 
     public LogIngestionService(MaskingPipeline maskingPipeline,
                                TopicRouter topicRouter,
-                               LogPublisher logPublisher) {
+                               LogPublisher logPublisher,
+                               IngestMetrics ingestMetrics) {
         this.maskingPipeline = maskingPipeline;
         this.topicRouter = topicRouter;
         this.logPublisher = logPublisher;
+        this.ingestMetrics = ingestMetrics;
     }
 
     @Async("virtualThreadExecutor")
@@ -36,6 +39,7 @@ public class LogIngestionService {
         LogEnvelope scrubbed = maskingPipeline.scrub(normalized);
         String topic = topicRouter.resolve(scrubbed);
         logPublisher.publish(topic, scrubbed.traceId(), scrubbed);
+        ingestMetrics.recordIngest(scrubbed.logType());
         log.info("log_ingested serviceName={} logType={} traceId={}",
                 scrubbed.serviceName(), scrubbed.logType(), scrubbed.traceId());
     }

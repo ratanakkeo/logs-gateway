@@ -4,6 +4,7 @@ import com.bank.observability.logsgateway.audit.domain.AuditArchiveWriter;
 import com.bank.observability.logsgateway.config.AwsS3Properties;
 import com.bank.observability.logsgateway.config.DownstreamGuard;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
+import com.bank.observability.logsgateway.shared.metrics.LogsGatewayMetrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -48,6 +49,7 @@ public class S3AuditArchiver implements AuditArchiveWriter {
     private final ObjectMapper objectMapper;
     private final Retry retry;
     private final CircuitBreaker circuitBreaker;
+    private final LogsGatewayMetrics metrics;
     private final List<LogEnvelope> buffer = new ArrayList<>();
 
     public S3AuditArchiver(
@@ -55,9 +57,10 @@ public class S3AuditArchiver implements AuditArchiveWriter {
             AwsS3Properties awsS3Properties,
             ObjectMapper objectMapper,
             RetryRegistry retryRegistry,
-            CircuitBreakerRegistry circuitBreakerRegistry) {
+            CircuitBreakerRegistry circuitBreakerRegistry,
+            LogsGatewayMetrics metrics) {
         this(s3Client, awsS3Properties, objectMapper, retryRegistry.retry("s3"),
-                circuitBreakerRegistry.circuitBreaker("s3"));
+                circuitBreakerRegistry.circuitBreaker("s3"), metrics);
     }
 
     S3AuditArchiver(
@@ -65,12 +68,14 @@ public class S3AuditArchiver implements AuditArchiveWriter {
             AwsS3Properties awsS3Properties,
             ObjectMapper objectMapper,
             Retry retry,
-            CircuitBreaker circuitBreaker) {
+            CircuitBreaker circuitBreaker,
+            LogsGatewayMetrics metrics) {
         this.s3Client = s3Client;
         this.awsS3Properties = awsS3Properties;
         this.objectMapper = objectMapper;
         this.retry = retry;
         this.circuitBreaker = circuitBreaker;
+        this.metrics = metrics;
     }
 
     @Override
@@ -98,6 +103,7 @@ public class S3AuditArchiver implements AuditArchiveWriter {
         byte[] compressed = gzip(toNdjson(snapshot));
         String key = objectKey(snapshot);
         log.info("s3_archive_batch size={} key={}", snapshot.size(), key);
+        metrics.recordS3FlushBytes(compressed.length);
         DownstreamGuard.run(retry, circuitBreaker, () -> {
             if (compressed.length >= awsS3Properties.getS3().getMultipartThresholdBytes()) {
                 multipartUpload(key, compressed);

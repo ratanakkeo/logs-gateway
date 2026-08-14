@@ -2,10 +2,12 @@ package com.bank.observability.logsgateway.audit.infrastructure;
 
 import com.bank.observability.logsgateway.config.AwsS3Properties;
 import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
+import com.bank.observability.logsgateway.shared.metrics.LogsGatewayMetrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +56,8 @@ class S3AuditArchiverTest {
                 .build());
         archiver = new S3AuditArchiver(
                 s3Client, properties, new ObjectMapper().findAndRegisterModules(),
-                retry, CircuitBreaker.ofDefaults("s3"));
+                retry, CircuitBreaker.ofDefaults("s3"),
+                new LogsGatewayMetrics(new SimpleMeterRegistry()));
     }
 
     @Test

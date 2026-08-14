@@ -4,5 +4,7 @@ import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 
 public interface Masker {
 
+    String type();
+
     LogEnvelope mask(LogEnvelope envelope);
 }
