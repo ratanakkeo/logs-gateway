@@ -23,12 +23,15 @@ spring:
     consumer:
       group-id: log-controller
       auto-offset-reset: earliest
+      enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: com.bank.observability.logsgateway.ingest.domain
         spring.json.value.default.type: com.bank.observability.logsgateway.ingest.domain.LogEnvelope
         spring.json.use.type.headers: false
+    listener:
+      ack-mode: MANUAL
 
 app:
   kafka:
@@ -56,6 +59,13 @@ app:
       - password
       - pin
       - secret
+  security:
+    api-keys:
+      - ${LOGS_GATEWAY_API_KEY:dev-key}
+    rate-limit:
+      capacity: 100
+      refill-tokens: 100
+      refill-duration: 1m
 
 management:
   endpoints:

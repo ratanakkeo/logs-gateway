@@ -22,6 +22,8 @@
         <aws.sdk.version>2.25.16</aws.sdk.version>
         <opensearch.client.version>2.12.0</opensearch.client.version>
         <opensearch.rest.version>2.17.1</opensearch.rest.version>
+        <bucket4j.version>8.14.0</bucket4j.version>
+        <logstash-logback.version>8.0</logstash-logback.version>
     </properties>
 
     <dependencies>
@@ -69,6 +71,20 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
             <version>${aws.sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

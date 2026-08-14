@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.support.Acknowledgment;
 
 import static org.mockito.Mockito.verify;
 
@@ -15,6 +16,9 @@ class AppLogIndexerTest {
     @Mock
     private LogIndexWriter logIndexWriter;
 
+    @Mock
+    private Acknowledgment acknowledgment;
+
     @InjectMocks
     private AppLogIndexer indexer;
 
@@ -22,8 +26,9 @@ class AppLogIndexerTest {
     void postsPayloadToOpenSearchClient() {
         LogEnvelope payload = new LogEnvelope(null, "auth-api", "trace-os", null, "APPLICATION", "indexed", null);
 
-        indexer.index(payload);
+        indexer.index(payload, acknowledgment);
 
         verify(logIndexWriter).index(payload);
+        verify(acknowledgment).acknowledge();
     }
 }

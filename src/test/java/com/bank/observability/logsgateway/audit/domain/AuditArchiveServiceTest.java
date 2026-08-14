@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.support.Acknowledgment;
 
 import java.util.List;
 
@@ -18,6 +19,9 @@ class AuditArchiveServiceTest {
     @Mock
     private AuditArchiveWriter auditArchiveWriter;
 
+    @Mock
+    private Acknowledgment acknowledgment;
+
     @InjectMocks
     private AuditArchiveService auditArchiveService;
 
@@ -26,14 +30,15 @@ class AuditArchiveServiceTest {
         List<LogEnvelope> batch = List.of(
                 new LogEnvelope(null, null, "t1", null, "AUDIT", null, null));
 
-        auditArchiveService.archive(batch);
+        auditArchiveService.archive(batch, acknowledgment);
 
         verify(auditArchiveWriter).archive(batch);
+        verify(acknowledgment).acknowledge();
     }
 
     @Test
     void ignoresEmptyBatch() {
-        auditArchiveService.archive(List.of());
+        auditArchiveService.archive(List.of(), acknowledgment);
 
         verify(auditArchiveWriter, never()).archive(List.of());
     }

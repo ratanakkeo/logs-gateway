@@ -4,6 +4,7 @@ import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,8 +19,9 @@ public class AppLogIndexer {
     }
 
     @KafkaListener(topics = "${app.kafka.topics.app}", groupId = "log-controller-opensearch")
-    public void index(LogEnvelope payload) {
+    public void index(LogEnvelope payload, Acknowledgment acknowledgment) {
         log.info("opensearch_index serviceName={} traceId={}", payload.serviceName(), payload.traceId());
         logIndexWriter.index(payload);
+        acknowledgment.acknowledge();
     }
 }
