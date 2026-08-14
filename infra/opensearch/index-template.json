@@ -1,0 +1,21 @@
+{
+  "index_patterns": ["bank-logs-app-*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "index.number_of_shards": 1,
+      "index.number_of_replicas": 1,
+      "plugins.index_state_management.rollover_alias": "bank-logs-app"
+    },
+    "mappings": {
+      "properties": {
+        "timestamp": { "type": "date" },
+        "serviceName": { "type": "keyword" },
+        "traceId": { "type": "keyword" },
+        "logLevel": { "type": "keyword" },
+        "logType": { "type": "keyword" },
+        "message": { "type": "text" }
+      }
+    }
+  }
+}

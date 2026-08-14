@@ -1,0 +1,17 @@
+{
+  "Rules": [
+    {
+      "ID": "audit-glacier-90d",
+      "Filter": {
+        "Prefix": "audit/"
+      },
+      "Status": "Enabled",
+      "Transitions": [
+        {
+          "Days": 90,
+          "StorageClass": "GLACIER"
+        }
+      ]
+    }
+  ]
+}

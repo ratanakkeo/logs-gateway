@@ -44,6 +44,7 @@ public class AwsS3Properties {
     public static class S3 {
         private String bucket;
         private String prefix;
+        private String endpoint;
         private long multipartThresholdBytes = 5_242_880L;
         private long partSizeBytes = 5_242_880L;
         private long flushMaxBytes = 1_048_576L;
@@ -63,6 +64,14 @@ public class AwsS3Properties {
 
         public void setPrefix(String prefix) {
             this.prefix = prefix;
+        }
+
+        public String getEndpoint() {
+            return endpoint;
+        }
+
+        public void setEndpoint(String endpoint) {
+            this.endpoint = endpoint;
         }
 
         public long getMultipartThresholdBytes() {

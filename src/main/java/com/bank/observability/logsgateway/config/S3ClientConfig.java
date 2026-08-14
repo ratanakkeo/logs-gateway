@@ -8,6 +8,8 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.net.URI;
+
 @Configuration
 public class S3ClientConfig {
 
@@ -22,6 +24,10 @@ public class S3ClientConfig {
                             properties.getSecretAccessKey()
                     )
             ));
+        }
+        String endpoint = properties.getS3().getEndpoint();
+        if (StringUtils.hasText(endpoint)) {
+            builder.endpointOverride(URI.create(endpoint)).forcePathStyle(true);
         }
         return builder.build();
     }
