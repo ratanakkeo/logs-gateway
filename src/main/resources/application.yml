@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: log-controller
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: log-controller
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.bank.observability.logcontroller.model
+        spring.json.value.default.type: com.bank.observability.logcontroller.model.LogPayload
+        spring.json.use.type.headers: false
+
+app:
+  kafka:
+    topics:
+      app: bank.logs.app
+      audit: bank.logs.audit
+  opensearch:
+    endpoint: http://localhost:9200
+    index: bank-logs-app
+  aws:
+    region: ap-southeast-1
+    access-key-id: ${AWS_ACCESS_KEY_ID:}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+    s3:
+      bucket: bank-audit-logs-worm
+      prefix: audit/
+      multipart-threshold-bytes: 5242880
+      part-size-bytes: 5242880
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
