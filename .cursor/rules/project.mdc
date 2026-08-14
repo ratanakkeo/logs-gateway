@@ -10,8 +10,9 @@ Spring Boot 3.4 / Java 21 service: ingest logs over HTTP, mask PAN, route to Kaf
 ## Current state (do not regress)
 
 - Base package: `com.bank.observability.logsgateway`. Main class: `LogsGatewayApplication`.
-- Package-by-layer until Phase 2: `config/`, `consumer/`, `controller/`, `model/`, `service/`.
-- Every class has a mirroring unit test. Keep tests green after every move.
+- Package-by-feature is live: `ingest/`, `masking/`, `routing/`, `audit/`, `appindex/`, `config/`, `shared/`.
+- Feature packages use `api/`, `domain/`, `infrastructure/` as needed. `domain/` never imports `api/` or `infrastructure/`.
+- Tests live under the same package path as `src/main`. Keep tests green after every move.
 
 ## Ingest contract (never break)
 
@@ -23,17 +24,17 @@ Spring Boot 3.4 / Java 21 service: ingest logs over HTTP, mask PAN, route to Kaf
 ## Conventions
 
 - Java 21 records for DTOs and the internal envelope; no Lombok going forward.
-- Package-by-feature: `ingest/`, `masking/`, `routing/`, `audit/`, `appindex/`, `config/`, `shared/`.
-- Feature packages use `api/`, `domain/`, `infrastructure/` as needed. `domain/` never imports `api/` or `infrastructure/`.
 - Kafka producer: `acks=all`, `enable.idempotence=true`. Consumers: manual ack after downstream success; poison → `*.DLT`.
 - PAN masking: Luhn-aware, at most first-6 + last-4. CVV must never be logged.
-- Tests mirror `src/main`. Run `mvn verify` after each step.
+- Tests mirror `src/main`. Run `mvn verify` after each step (`mvn test -Dgroups=it` for Kafka Testcontainers IT).
 
 ```java
-// Edge DTO (Phase 3+): Jakarta validation on the HTTP record
+// Edge DTO: Jakarta validation on the HTTP record
 public record IngestLogRequest(
-    @NotBlank String traceId,
+    Instant timestamp,
     @NotBlank String serviceName,
+    @NotBlank String traceId,
+    String logLevel,
     @NotBlank String logType,
     String message,
     Map<String, Object> data) {}

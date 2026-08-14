@@ -2,6 +2,8 @@
 
 Spring Boot 3.4 / Java 21 service that ingests logs over HTTP, masks PAN, routes to Kafka, then indexes application logs in OpenSearch and archives audit logs to S3.
 
+Package-by-feature under `com.bank.observability.logsgateway`. Navigation: [docs/CODEMAPS/INDEX.md](docs/CODEMAPS/INDEX.md), source tree: [docs/current-structure.md](docs/current-structure.md).
+
 ## Local runbook
 
 Prerequisites: Java 21, Maven 3.9+, Docker.
@@ -59,7 +61,7 @@ curl -sS -X POST http://localhost:8080/v1/logs/ingest \
   }'
 ```
 
-`POST /v1/logs/ingest` requires `traceId`, `serviceName`, and `logType`. Missing fields return `400`. Valid payloads return `202 Accepted` immediately.
+`POST /v1/logs/ingest` requires `traceId`, `serviceName`, and `logType`. Missing fields return `400`. Valid payloads return `202 Accepted` immediately. Ingest also requires header `X-API-Key` (default `dev-key`).
 
 `logType: AUDIT` is published to `bank.logs.audit` (S3). Every other type goes to `bank.logs.app` (OpenSearch). Kafka partition key is `traceId`.
 
@@ -72,6 +74,9 @@ curl -sS -X POST http://localhost:8080/v1/logs/ingest \
 | Prometheus scrape | http://localhost:8080/actuator/prometheus |
 | Grafana dashboard JSON | [grafana/logs-gateway-dashboard.json](grafana/logs-gateway-dashboard.json) |
 | LocalStack S3 | http://localhost:4566 |
+| Codemaps | [docs/CODEMAPS/INDEX.md](docs/CODEMAPS/INDEX.md) |
+| Source tree | [docs/current-structure.md](docs/current-structure.md) |
+| Infra apply steps | [infra/README.md](infra/README.md) |
 
 Import the Grafana dashboard and point Prometheus at `/actuator/prometheus`.
 
