@@ -26,8 +26,8 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: com.bank.observability.logcontroller.model
-        spring.json.value.default.type: com.bank.observability.logcontroller.model.LogPayload
+        spring.json.trusted.packages: com.bank.observability.logsgateway.model
+        spring.json.value.default.type: com.bank.observability.logsgateway.model.LogPayload
         spring.json.use.type.headers: false
 
 app:

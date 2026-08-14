@@ -1,6 +1,6 @@
 # Pre-refactor layout snapshot
 
-Captured before package-by-feature moves. Application code still lives under `com.bank.observability.logcontroller` until Phase 1.
+Captured before package-by-feature moves. Phase 1 renamed the live package to `com.bank.observability.logsgateway`; this tree is the pre-rename snapshot.
 
 ```
 .
