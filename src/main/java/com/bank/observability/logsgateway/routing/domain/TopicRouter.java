@@ -1,7 +1,7 @@
 package com.bank.observability.logsgateway.routing.domain;
 
 import com.bank.observability.logsgateway.config.KafkaTopicProperties;
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -16,8 +16,8 @@ public class TopicRouter {
         this.topics = topics;
     }
 
-    public String resolve(LogPayload payload) {
-        if (payload.getLogType() != null && "AUDIT".equalsIgnoreCase(payload.getLogType())) {
+    public String resolve(LogEnvelope payload) {
+        if (payload.logType() != null && "AUDIT".equalsIgnoreCase(payload.logType())) {
             return topics.getAudit();
         }
         return StringUtils.hasText(topics.getApp()) ? topics.getApp() : DEFAULT_APP_TOPIC;

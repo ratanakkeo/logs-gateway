@@ -14,20 +14,19 @@ class LogPayloadTest {
 
     @Test
     void jacksonRoundTripPreservesFields() throws Exception {
-        LogPayload original = LogPayload.builder()
-                .timestamp(Instant.parse("2026-08-10T07:00:00Z"))
-                .serviceName("payments-api")
-                .traceId("trace-123")
-                .logLevel("INFO")
-                .logType("APPLICATION")
-                .message("payment authorized")
-                .data(Map.of("amount", "10.00"))
-                .build();
+        IngestLogRequest original = new IngestLogRequest(
+                Instant.parse("2026-08-10T07:00:00Z"),
+                "payments-api",
+                "trace-123",
+                "INFO",
+                "APPLICATION",
+                "payment authorized",
+                Map.of("amount", "10.00"));
 
         String json = objectMapper.writeValueAsString(original);
-        LogPayload restored = objectMapper.readValue(json, LogPayload.class);
+        IngestLogRequest restored = objectMapper.readValue(json, IngestLogRequest.class);
 
-        assertThat(restored).usingRecursiveComparison().isEqualTo(original);
+        assertThat(restored).isEqualTo(original);
         assertThat(json).contains("payments-api", "trace-123", "APPLICATION");
     }
 }

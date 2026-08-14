@@ -20,6 +20,8 @@
     <properties>
         <java.version>21</java.version>
         <aws.sdk.version>2.25.16</aws.sdk.version>
+        <opensearch.client.version>2.12.0</opensearch.client.version>
+        <opensearch.rest.version>2.17.1</opensearch.rest.version>
     </properties>
 
     <dependencies>
@@ -52,6 +54,16 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <version>${opensearch.client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-rest-client</artifactId>
+            <version>${opensearch.rest.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

@@ -1,6 +1,6 @@
 package com.bank.observability.logsgateway.appindex.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,8 +18,8 @@ public class AppLogIndexer {
     }
 
     @KafkaListener(topics = "${app.kafka.topics.app}", groupId = "log-controller-opensearch")
-    public void index(LogPayload payload) {
-        log.info("opensearch_index serviceName={} traceId={}", payload.getServiceName(), payload.getTraceId());
+    public void index(LogEnvelope payload) {
+        log.info("opensearch_index serviceName={} traceId={}", payload.serviceName(), payload.traceId());
         logIndexWriter.index(payload);
     }
 }

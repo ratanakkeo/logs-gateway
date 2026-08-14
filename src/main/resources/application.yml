@@ -26,8 +26,8 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: com.bank.observability.logsgateway.ingest.api
-        spring.json.value.default.type: com.bank.observability.logsgateway.ingest.api.LogPayload
+        spring.json.trusted.packages: com.bank.observability.logsgateway.ingest.domain
+        spring.json.value.default.type: com.bank.observability.logsgateway.ingest.domain.LogEnvelope
         spring.json.use.type.headers: false
 
 app:
@@ -38,6 +38,8 @@ app:
   opensearch:
     endpoint: http://localhost:9200
     index: bank-logs-app
+    bulk-size: 500
+    flush-interval-ms: 5000
   aws:
     region: ap-southeast-1
     access-key-id: ${AWS_ACCESS_KEY_ID:}
@@ -47,6 +49,13 @@ app:
       prefix: audit/
       multipart-threshold-bytes: 5242880
       part-size-bytes: 5242880
+      flush-max-bytes: 1048576
+      flush-interval-ms: 60000
+  masking:
+    fields:
+      - password
+      - pin
+      - secret
 
 management:
   endpoints:

@@ -1,7 +1,6 @@
 package com.bank.observability.logsgateway.ingest.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
-import com.bank.observability.logsgateway.masking.domain.PiiMaskingService;
+import com.bank.observability.logsgateway.masking.domain.MaskingPipeline;
 import com.bank.observability.logsgateway.routing.domain.TopicRouter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +19,7 @@ import static org.mockito.Mockito.when;
 class LogIngestionServiceTest {
 
     @Mock
-    private PiiMaskingService piiMaskingService;
+    private MaskingPipeline maskingPipeline;
 
     @Mock
     private TopicRouter topicRouter;
@@ -33,20 +32,15 @@ class LogIngestionServiceTest {
 
     @Test
     void normalizesTimestampMasksAndRoutes() {
-        LogPayload payload = LogPayload.builder()
-                .serviceName("payments-api")
-                .traceId("trace-1")
-                .logType("APPLICATION")
-                .message("ok")
-                .build();
-        when(piiMaskingService.scrub(any(LogPayload.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(topicRouter.resolve(any(LogPayload.class))).thenReturn("bank.logs.app");
+        LogEnvelope payload = new LogEnvelope(null, "payments-api", "trace-1", null, "APPLICATION", "ok", null);
+        when(maskingPipeline.scrub(any(LogEnvelope.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(topicRouter.resolve(any(LogEnvelope.class))).thenReturn("bank.logs.app");
 
         logIngestionService.ingestAsync(payload);
 
-        ArgumentCaptor<LogPayload> captor = ArgumentCaptor.forClass(LogPayload.class);
-        verify(piiMaskingService).scrub(captor.capture());
-        verify(logPublisher).publish(eq("bank.logs.app"), eq("trace-1"), any(LogPayload.class));
-        assertThat(captor.getValue().getTimestamp()).isNotNull();
+        ArgumentCaptor<LogEnvelope> captor = ArgumentCaptor.forClass(LogEnvelope.class);
+        verify(maskingPipeline).scrub(captor.capture());
+        verify(logPublisher).publish(eq("bank.logs.app"), eq("trace-1"), any(LogEnvelope.class));
+        assertThat(captor.getValue().timestamp()).isNotNull();
     }
 }

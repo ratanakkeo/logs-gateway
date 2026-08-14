@@ -1,7 +1,7 @@
 package com.bank.observability.logsgateway.audit.infrastructure;
 
 import com.bank.observability.logsgateway.config.AwsS3Properties;
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,16 +42,13 @@ class S3AuditArchiverTest {
         properties.getS3().setPrefix("audit/");
         properties.getS3().setMultipartThresholdBytes(5_242_880L);
         properties.getS3().setPartSizeBytes(5_242_880L);
+        properties.getS3().setFlushMaxBytes(1L);
         archiver = new S3AuditArchiver(s3Client, properties, new ObjectMapper().findAndRegisterModules());
     }
 
     @Test
     void smallBatchUsesPutObject() {
-        LogPayload payload = LogPayload.builder()
-                .traceId("trace-s3")
-                .logType("AUDIT")
-                .message("teller override")
-                .build();
+        LogEnvelope payload = new LogEnvelope(null, "teller-api", "trace-s3", null, "AUDIT", "teller override", null);
 
         archiver.archive(List.of(payload));
 
@@ -59,9 +56,9 @@ class S3AuditArchiverTest {
         verify(s3Client).putObject(requestCaptor.capture(), any(RequestBody.class));
         PutObjectRequest request = requestCaptor.getValue();
         assertThat(request.bucket()).isEqualTo("bank-audit-logs-worm");
-        assertThat(request.key()).startsWith("audit/");
-        assertThat(request.key()).contains("trace-s3");
-        assertThat(request.key()).endsWith(".ndjson.gz");
+        assertThat(request.key()).startsWith("audit/dt=");
+        assertThat(request.key()).contains("service=teller-api");
+        assertThat(request.key()).endsWith(".jsonl.gz");
         assertThat(request.contentType()).isEqualTo("application/gzip");
     }
 
@@ -74,11 +71,7 @@ class S3AuditArchiverTest {
         when(s3Client.uploadPart(any(UploadPartRequest.class), any(RequestBody.class)))
                 .thenReturn(UploadPartResponse.builder().eTag("etag-1").build());
 
-        LogPayload payload = LogPayload.builder()
-                .traceId("trace-mp")
-                .logType("AUDIT")
-                .message("large audit event")
-                .build();
+        LogEnvelope payload = new LogEnvelope(null, "teller-api", "trace-mp", null, "AUDIT", "large audit event", null);
 
         archiver.archive(List.of(payload));
 

@@ -1,5 +1,6 @@
 package com.bank.observability.logsgateway.ingest.api;
 
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import com.bank.observability.logsgateway.ingest.domain.LogIngestionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -31,9 +32,8 @@ class IngestionControllerTest {
 
     @Test
     void missingRequiredFieldsReturn400() throws Exception {
-        LogPayload payload = LogPayload.builder()
-                .message("no identifiers")
-                .build();
+        IngestLogRequest payload = new IngestLogRequest(
+                null, null, null, null, null, "no identifiers", null);
 
         mockMvc.perform(post("/v1/logs/ingest")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -44,19 +44,14 @@ class IngestionControllerTest {
 
     @Test
     void validPayloadReturns202AndHandsOffAsynchronously() throws Exception {
-        LogPayload payload = LogPayload.builder()
-                .serviceName("payments-api")
-                .traceId("trace-1")
-                .logType("APPLICATION")
-                .message("ok")
-                .data(Map.of("k", "v"))
-                .build();
+        IngestLogRequest payload = new IngestLogRequest(
+                null, "payments-api", "trace-1", null, "APPLICATION", "ok", Map.of("k", "v"));
 
         mockMvc.perform(post("/v1/logs/ingest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isAccepted());
 
-        verify(logIngestionService).ingestAsync(any(LogPayload.class));
+        verify(logIngestionService).ingestAsync(any(LogEnvelope.class));
     }
 }

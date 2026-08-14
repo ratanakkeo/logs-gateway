@@ -8,4 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OpenSearchProperties {
     private String endpoint;
     private String index;
+    private int bulkSize = 500;
+    private long flushIntervalMs = 5_000L;
 }

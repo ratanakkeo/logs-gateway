@@ -1,7 +1,6 @@
 package com.bank.observability.logsgateway.ingest.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
-import com.bank.observability.logsgateway.masking.domain.PiiMaskingService;
+import com.bank.observability.logsgateway.masking.domain.MaskingPipeline;
 import com.bank.observability.logsgateway.routing.domain.TopicRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,28 +15,28 @@ public class LogIngestionService {
 
     private static final Logger log = LoggerFactory.getLogger(LogIngestionService.class);
 
-    private final PiiMaskingService piiMaskingService;
+    private final MaskingPipeline maskingPipeline;
     private final TopicRouter topicRouter;
     private final LogPublisher logPublisher;
 
-    public LogIngestionService(PiiMaskingService piiMaskingService,
+    public LogIngestionService(MaskingPipeline maskingPipeline,
                                TopicRouter topicRouter,
                                LogPublisher logPublisher) {
-        this.piiMaskingService = piiMaskingService;
+        this.maskingPipeline = maskingPipeline;
         this.topicRouter = topicRouter;
         this.logPublisher = logPublisher;
     }
 
     @Async("virtualThreadExecutor")
-    public void ingestAsync(LogPayload payload) {
-        Instant utc = payload.getTimestamp() == null
+    public void ingestAsync(LogEnvelope payload) {
+        Instant utc = payload.timestamp() == null
                 ? Instant.now()
-                : payload.getTimestamp().atZone(ZoneOffset.UTC).toInstant();
-        payload.setTimestamp(utc);
-        LogPayload scrubbed = piiMaskingService.scrub(payload);
+                : payload.timestamp().atZone(ZoneOffset.UTC).toInstant();
+        LogEnvelope normalized = payload.withTimestamp(utc);
+        LogEnvelope scrubbed = maskingPipeline.scrub(normalized);
         String topic = topicRouter.resolve(scrubbed);
-        logPublisher.publish(topic, scrubbed.getTraceId(), scrubbed);
+        logPublisher.publish(topic, scrubbed.traceId(), scrubbed);
         log.info("log_ingested serviceName={} logType={} traceId={}",
-                scrubbed.getServiceName(), scrubbed.getLogType(), scrubbed.getTraceId());
+                scrubbed.serviceName(), scrubbed.logType(), scrubbed.traceId());
     }
 }

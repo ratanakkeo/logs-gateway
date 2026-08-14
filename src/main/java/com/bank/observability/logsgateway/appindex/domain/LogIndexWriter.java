@@ -1,8 +1,8 @@
 package com.bank.observability.logsgateway.appindex.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 
 public interface LogIndexWriter {
 
-    void index(LogPayload payload);
+    void index(LogEnvelope payload);
 }

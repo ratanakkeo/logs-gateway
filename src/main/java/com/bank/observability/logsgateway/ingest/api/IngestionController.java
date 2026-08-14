@@ -21,8 +21,8 @@ public class IngestionController {
     }
 
     @PostMapping("/ingest")
-    public ResponseEntity<Void> ingest(@Valid @RequestBody LogPayload payload) {
-        logIngestionService.ingestAsync(payload);
+    public ResponseEntity<Void> ingest(@Valid @RequestBody IngestLogRequest payload) {
+        logIngestionService.ingestAsync(payload.toEnvelope());
         return ResponseEntity.accepted().build();
     }
 }

@@ -2,7 +2,7 @@ package com.bank.observability.logsgateway.audit.infrastructure;
 
 import com.bank.observability.logsgateway.audit.domain.AuditArchiveWriter;
 import com.bank.observability.logsgateway.config.AwsS3Properties;
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,21 +36,39 @@ import java.util.zip.GZIPOutputStream;
 @RequiredArgsConstructor
 public class S3AuditArchiver implements AuditArchiveWriter {
 
-    private static final DateTimeFormatter KEY_TIME =
-            DateTimeFormatter.ofPattern("yyyy/MM/dd/HH").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter PARTITION_DATE =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
     private final S3Client s3Client;
     private final AwsS3Properties awsS3Properties;
     private final ObjectMapper objectMapper;
+    private final List<LogEnvelope> buffer = new ArrayList<>();
 
     @Override
-    public void archive(List<LogPayload> batch) {
+    public synchronized void archive(List<LogEnvelope> batch) {
         if (batch == null || batch.isEmpty()) {
             return;
         }
-        byte[] compressed = gzip(toNdjson(batch));
-        String key = objectKey(batch);
-        log.info("s3_archive_batch size={} key={}", batch.size(), key);
+        buffer.addAll(batch);
+        if (estimatedSize() >= awsS3Properties.getS3().getFlushMaxBytes()) {
+            flush();
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelayString = "${app.aws.s3.flush-interval-ms:60000}")
+    public synchronized void scheduledFlush() {
+        flush();
+    }
+
+    synchronized void flush() {
+        if (buffer.isEmpty()) {
+            return;
+        }
+        List<LogEnvelope> snapshot = List.copyOf(buffer);
+        buffer.clear();
+        byte[] compressed = gzip(toNdjson(snapshot));
+        String key = objectKey(snapshot);
+        log.info("s3_archive_batch size={} key={}", snapshot.size(), key);
         if (compressed.length >= awsS3Properties.getS3().getMultipartThresholdBytes()) {
             multipartUpload(key, compressed);
         } else {
@@ -65,9 +83,13 @@ public class S3AuditArchiver implements AuditArchiveWriter {
         }
     }
 
-    String toNdjson(List<LogPayload> batch) {
+    private long estimatedSize() {
+        return toNdjson(buffer).getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    String toNdjson(List<LogEnvelope> batch) {
         StringBuilder ndjson = new StringBuilder();
-        for (LogPayload payload : batch) {
+        for (LogEnvelope payload : batch) {
             try {
                 ndjson.append(objectMapper.writeValueAsString(payload)).append('\n');
             } catch (Exception ex) {
@@ -88,13 +110,14 @@ public class S3AuditArchiver implements AuditArchiveWriter {
         }
     }
 
-    String objectKey(List<LogPayload> batch) {
+    String objectKey(List<LogEnvelope> batch) {
         Instant now = Instant.now();
-        String prefix = awsS3Properties.getS3().getPrefix() == null ? "" : awsS3Properties.getS3().getPrefix();
-        String traceOrUuid = batch.getFirst().getTraceId() != null
-                ? batch.getFirst().getTraceId()
-                : UUID.randomUUID().toString();
-        return prefix + KEY_TIME.format(now) + "/" + traceOrUuid + "-" + now.toEpochMilli() + ".ndjson.gz";
+        String prefix = awsS3Properties.getS3().getPrefix() == null ? "audit/" : awsS3Properties.getS3().getPrefix();
+        String service = batch.getFirst().serviceName() == null || batch.getFirst().serviceName().isBlank()
+                ? "unknown"
+                : batch.getFirst().serviceName();
+        return prefix + "dt=" + PARTITION_DATE.format(now) + "/service=" + service + "/"
+                + UUID.randomUUID() + ".jsonl.gz";
     }
 
     private void multipartUpload(String key, byte[] compressed) {

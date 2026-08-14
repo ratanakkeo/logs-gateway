@@ -1,6 +1,6 @@
 package com.bank.observability.logsgateway.audit.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +23,8 @@ class AuditArchiveServiceTest {
 
     @Test
     void delegatesNonEmptyBatchToWriter() {
-        List<LogPayload> batch = List.of(LogPayload.builder().traceId("t1").logType("AUDIT").build());
+        List<LogEnvelope> batch = List.of(
+                new LogEnvelope(null, null, "t1", null, "AUDIT", null, null));
 
         auditArchiveService.archive(batch);
 

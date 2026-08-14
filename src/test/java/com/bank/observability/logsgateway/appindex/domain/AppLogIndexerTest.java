@@ -1,6 +1,6 @@
 package com.bank.observability.logsgateway.appindex.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,12 +20,7 @@ class AppLogIndexerTest {
 
     @Test
     void postsPayloadToOpenSearchClient() {
-        LogPayload payload = LogPayload.builder()
-                .serviceName("auth-api")
-                .traceId("trace-os")
-                .logType("APPLICATION")
-                .message("indexed")
-                .build();
+        LogEnvelope payload = new LogEnvelope(null, "auth-api", "trace-os", null, "APPLICATION", "indexed", null);
 
         indexer.index(payload);
 

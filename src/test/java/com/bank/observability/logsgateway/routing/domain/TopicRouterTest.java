@@ -1,7 +1,7 @@
 package com.bank.observability.logsgateway.routing.domain;
 
 import com.bank.observability.logsgateway.config.KafkaTopicProperties;
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,23 +21,14 @@ class TopicRouterTest {
 
     @Test
     void routesAuditLogsToAuditTopicUsingTraceIdKey() {
-        LogPayload payload = LogPayload.builder()
-                .traceId("trace-audit")
-                .logType("AUDIT")
-                .message("login success")
-                .build();
+        LogEnvelope payload = new LogEnvelope(null, null, "trace-audit", null, "AUDIT", "login success", null);
 
         assertThat(router.resolve(payload)).isEqualTo("bank.logs.audit");
     }
 
     @Test
     void routesApplicationLogsToAppTopicUsingTraceIdKey() {
-        LogPayload payload = LogPayload.builder()
-                .traceId("trace-app")
-                .logType("INFO")
-                .logLevel("ERROR")
-                .message("timeout")
-                .build();
+        LogEnvelope payload = new LogEnvelope(null, null, "trace-app", "ERROR", "INFO", "timeout", null);
 
         assertThat(router.resolve(payload)).isEqualTo("bank.logs.app");
     }
@@ -48,7 +39,7 @@ class TopicRouterTest {
         topics.setAudit("bank.logs.audit");
         TopicRouter defaultingRouter = new TopicRouter(topics);
 
-        LogPayload payload = LogPayload.builder().logType("APPLICATION").build();
+        LogEnvelope payload = new LogEnvelope(null, null, null, null, "APPLICATION", null, null);
 
         assertThat(defaultingRouter.resolve(payload)).isEqualTo("bank.logs.app");
     }

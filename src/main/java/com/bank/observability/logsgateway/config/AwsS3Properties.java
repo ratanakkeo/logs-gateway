@@ -17,5 +17,7 @@ public class AwsS3Properties {
         private String prefix;
         private long multipartThresholdBytes = 5_242_880L;
         private long partSizeBytes = 5_242_880L;
+        private long flushMaxBytes = 1_048_576L;
+        private long flushIntervalMs = 60_000L;
     }
 }

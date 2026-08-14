@@ -1,6 +1,6 @@
 package com.bank.observability.logsgateway.audit.domain;
 
-import com.bank.observability.logsgateway.ingest.api.LogPayload;
+import com.bank.observability.logsgateway.ingest.domain.LogEnvelope;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +20,7 @@ public class AuditArchiveService {
             groupId = "log-controller-s3-audit",
             batch = "true"
     )
-    public void archive(List<LogPayload> batch) {
+    public void archive(List<LogEnvelope> batch) {
         if (batch == null || batch.isEmpty()) {
             return;
         }
